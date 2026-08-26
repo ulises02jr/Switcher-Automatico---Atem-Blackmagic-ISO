@@ -65,23 +65,11 @@
   .stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .stat{background:var(--card2);border:1px solid var(--border);border-radius:11px;padding:14px;text-align:center;}
   .stat .l{color:var(--muted);font-size:12px;} .stat .v{font-size:24px;font-weight:700;margin-top:2px;}
-  .hidden{display:none;}
+  .hidden{display:none !important;}
   .muted{color:var(--muted);font-size:13px;}
 </style>
 </head>
 <body>
-
-<!-- Pantalla de login (aparece en el celular si hay contraseña) -->
-<div id="loginOverlay" class="hidden" style="position:fixed;inset:0;background:#0d0d0f;display:flex;align-items:center;justify-content:center;z-index:1000;padding:24px">
-  <div style="max-width:340px;width:100%;text-align:center">
-    <div style="font-size:22px;font-weight:700;margin-bottom:6px">🔒 AutoSwitcher</div>
-    <div class="muted" style="margin-bottom:18px">Ingresá la contraseña para controlar el switcher.</div>
-    <input id="loginPw" type="password" placeholder="Contraseña" style="margin-bottom:10px"
-      onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="btn primary full" onclick="doLogin()">Entrar</button>
-    <div id="loginErr" class="muted hidden" style="color:#f87171;margin-top:10px">Contraseña incorrecta</div>
-  </div>
-</div>
 
 <div class="wrap">
 
@@ -121,18 +109,6 @@
       <div id="foundList" style="margin-top:8px"></div>
     </div>
 
-    <div style="margin-top:20px">
-      <div class="h">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        Seguridad
-      </div>
-      <div class="muted" id="pwStatus" style="margin-bottom:8px"></div>
-      <div class="row">
-        <input id="pwInput" type="password" placeholder="Contraseña (vacío = sin contraseña)" style="flex:2">
-        <button class="btn primary" onclick="savePassword()" style="flex:1">Guardar</button>
-      </div>
-    </div>
-
     <div id="nameSection" class="hidden" style="margin-top:20px">
       <div class="h">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -140,12 +116,6 @@
       </div>
       <div id="nameList"></div>
     </div>
-  </div>
-
-  <!-- SIN CONEXION -->
-  <div id="noconn" class="card" style="text-align:center;padding:40px 20px">
-    <div class="muted" id="noconnMsg" style="margin-bottom:14px">No hay ningún ATEM conectado.</div>
-    <button class="btn primary" onclick="openConfig()">Conectar un dispositivo</button>
   </div>
 
   <!-- DASHBOARD -->
@@ -230,18 +200,13 @@ async function refresh(){
   document.getElementById('cText').textContent = live ? (d.product||'Conectado')
       : (d.reconnecting ? 'Reconectando…' : 'Sin conexión');
   document.getElementById('main').classList.toggle('hidden',!live);
-  document.getElementById('noconn').classList.toggle('hidden',live);
   document.getElementById('connectBlock').classList.toggle('hidden',live);
   document.getElementById('connectedBlock').classList.toggle('hidden',!live);
   if(live) renderConnected(d);
   document.getElementById('nameSection').classList.toggle('hidden',!live);
-  document.getElementById('noconnMsg').textContent = d.reconnecting
-      ? 'Se perdió la conexión. Reconectando…' : 'No hay ningún ATEM conectado.';
+  if(!live) document.getElementById('config').classList.remove('hidden');
   renderDevices(d.devices||[]);
   renderPresets(d.presets||[]);
-  document.getElementById('pwStatus').textContent = d.hasPassword
-    ? 'Hay contraseña. Los celulares deben ingresarla.'
-    : 'Sin contraseña: cualquiera en la red puede controlar.';
   if(!live) return;
 
   nextTs=Date.now()/1000+(d.secondsUntilNext||0);
@@ -279,8 +244,10 @@ function renderNames(cams){
 
 function renderFound(list){
   const el=document.getElementById('foundList'); el.innerHTML='';
-  if(list.length===0){ el.innerHTML='<div class="muted">No se encontraron ATEMs.</div>'; return; }
-  list.forEach(a=>{
+  const saved=(cur.devices||[]).map(d=>d.ip);
+  const nuevos=list.filter(a=>!saved.includes(a.ip));
+  if(nuevos.length===0){ el.innerHTML='<div class="muted">No se encontraron ATEMs nuevos.</div>'; return; }
+  nuevos.forEach(a=>{
     const row=document.createElement('div'); row.className='listItem';
     row.innerHTML=`<div class="meta"><span class="n">${a.name}</span><span class="s">${a.ip}</span></div>`;
     const b=document.createElement('button'); b.className='mini'; b.textContent='Conectar';
@@ -337,7 +304,7 @@ function renderPresets(list){
   });
 }
 
-function showLogin(){ document.getElementById('loginOverlay').classList.remove('hidden'); }
+function showLogin(){ /* contraseña deshabilitada */ }
 
 async function doLogin(){
   const pw=document.getElementById('loginPw').value;

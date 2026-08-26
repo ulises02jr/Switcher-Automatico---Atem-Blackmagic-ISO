@@ -10,48 +10,21 @@ builder.Services.AddSingleton(svc);
 builder.Services.AddHostedService(sp => new LoopService(svc));
 
 var app = builder.Build();
-app.UseDefaultFiles();
-app.UseStaticFiles();
 
-string Token(string pw) => Convert.ToHexString(
-    System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(pw)));
-
-// Guardia de contraseña: protege /api/* para conexiones remotas (celulares).
-// La app local (equipo) pasa sin contraseña.
+// Evita que WebView2 o el navegador guarden versiones viejas en cache.
 app.Use(async (ctx, next) =>
 {
-    var pw = store.Config.Password;
-    var path = ctx.Request.Path.Value ?? "";
-    var ip = ctx.Connection.RemoteIpAddress;
-    bool loopback = ip != null && (System.Net.IPAddress.IsLoopback(ip)
-        || (ip.IsIPv4MappedToIPv6 && System.Net.IPAddress.IsLoopback(ip.MapToIPv4())));
-    bool needsAuth = path.StartsWith("/api/") && path != "/api/login"
-        && !string.IsNullOrEmpty(pw) && !loopback;
-    if (needsAuth && ctx.Request.Cookies["auth"] != Token(pw))
+    ctx.Response.OnStarting(() =>
     {
-        ctx.Response.StatusCode = 401;
-        return;
-    }
+        ctx.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+        ctx.Response.Headers["Pragma"] = "no-cache";
+        return Task.CompletedTask;
+    });
     await next();
 });
 
-app.MapPost("/api/login", (HttpContext ctx, LoginReq r) =>
-{
-    if (r.password == store.Config.Password)
-    {
-        ctx.Response.Cookies.Append("auth", Token(r.password),
-            new CookieOptions { SameSite = SameSiteMode.Lax, MaxAge = TimeSpan.FromDays(30) });
-        return Results.Ok(new { ok = true });
-    }
-    return Results.Json(new { ok = false }, statusCode: 401);
-});
-
-app.MapPost("/api/config/password", (PasswordReq r) =>
-{
-    store.Config.Password = r.password ?? "";
-    store.Save();
-    return Results.Ok();
-});
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 // Auto-conectar si pasaron una IP por linea de comandos (opcional).
 if (args.Length > 0)

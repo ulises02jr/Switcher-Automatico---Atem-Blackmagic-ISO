@@ -10,6 +10,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <RootNamespace>AutoSwitcher.App</RootNamespace>
     <AssemblyName>AutoSwitcher</AssemblyName>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

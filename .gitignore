@@ -4,3 +4,8 @@ obj/
 .vs/
 dist/
 installer/*.exe
+
+screen*.jpg
+screen*.png
+shot.ps1
+*.b64

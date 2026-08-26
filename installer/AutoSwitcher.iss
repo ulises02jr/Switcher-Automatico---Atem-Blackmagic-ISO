@@ -8,6 +8,7 @@ DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputDir=C:\Users\miigl\Dev\AutoSwitcher\installer
 OutputBaseFilename=AutoSwitcher-Setup
+SetupIconFile=C:\Users\miigl\Dev\AutoSwitcher\installer\icon.ico
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
